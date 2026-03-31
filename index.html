@@ -1,0 +1,430 @@
+Html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toán Lớp 4 Vui Nhộn</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Framer Motion (via ESM) -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #F0F9FF;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .fraction-line {
+            height: 3px;
+            width: 100%;
+            background-color: #2563eb;
+            margin: 4px 0;
+            border-radius: 2px;
+        }
+
+        .custom-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        const App = () => {
+            const [problem, setProblem] = useState(null);
+            const [userAnswer, setUserAnswer] = useState('');
+            const [score, setScore] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(30);
+            const [gameState, setGameState] = useState('idle'); // idle, playing, gameOver
+            const [feedback, setFeedback] = useState(null); // correct, wrong
+            const inputRef = useRef(null);
+
+            const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+
+            const simplify = (f) => {
+                const common = gcd(Math.abs(f.num), Math.abs(f.den));
+                return { num: f.num / common, den: f.den / common };
+            };
+
+            const generateProblem = useCallback(() => {
+                const types = ['basic', 'fraction', 'natural', 'geometry', 'measurement'];
+                const selectedType = types[Math.floor(Math.random() * types.length)];
+                let newProblem;
+
+                switch (selectedType) {
+                    case 'natural': {
+                        const subType = Math.random();
+                        if (subType < 0.33) {
+                            const a = Math.floor(Math.random() * 90000) + 10000;
+                            const b = Math.floor(Math.random() * 90000) + 10000;
+                            newProblem = {
+                                type: 'natural',
+                                question: `So sánh ${a} và ${b}`,
+                                answer: a > b ? '>' : a < b ? '<' : '=',
+                                display: (
+                                    <div className="text-4xl font-bold text-indigo-600 flex items-center">
+                                        {a} <span className="text-gray-300 mx-6">?</span> {b}
+                                    </div>
+                                ),
+                                hint: 'Nhập >, < hoặc ='
+                            };
+                        } else if (subType < 0.66) {
+                            const a = Math.floor(Math.random() * 100);
+                            const b = Math.floor(Math.random() * 100);
+                            const sum = a + b + (Math.floor(Math.random() * 100));
+                            const finalC = sum + (3 - (sum % 3));
+                            const finalAvg = (a + b + finalC) / 3;
+                            newProblem = {
+                                type: 'natural',
+                                question: `Trung bình cộng`,
+                                answer: String(finalAvg),
+                                display: (
+                                    <div className="text-3xl font-bold text-indigo-600 text-center">
+                                        Trung bình cộng của<br/>{a}, {b} và {finalC} là?
+                                    </div>
+                                )
+                            };
+                        } else {
+                            const num = Math.floor(Math.random() * 9000) + 1000;
+                            const rounded = Math.round(num / 100) * 100;
+                            newProblem = {
+                                type: 'natural',
+                                question: `Làm tròn`,
+                                answer: String(rounded),
+                                display: (
+                                    <div className="text-3xl font-bold text-indigo-600 text-center">
+                                        Làm tròn {num}<br/>đến hàng trăm?
+                                    </div>
+                                )
+                            };
+                        }
+                        break;
+                    }
+                    case 'geometry': {
+                        const subType = Math.random();
+                        if (subType < 0.5) {
+                            const angles = [
+                                { name: 'Góc vuông', val: '90' },
+                                { name: 'Góc nhọn', val: 'nhon' },
+                                { name: 'Góc tù', val: 'tu' },
+                                { name: 'Góc bẹt', val: 'bet' }
+                            ];
+                            const selected = angles[Math.floor(Math.random() * angles.length)];
+                            newProblem = {
+                                type: 'geometry',
+                                question: `Góc`,
+                                answer: selected.val,
+                                display: (
+                                    <div className="text-3xl font-bold text-emerald-600 text-center">
+                                        {selected.name} là góc nào?<br/>
+                                        <span className="text-sm text-gray-400 font-medium">(Gợi ý: 90, nhon, tu, bet)</span>
+                                    </div>
+                                ),
+                                hint: '90: vuông, nhon: nhọn, tu: tù, bet: bẹt'
+                            };
+                        } else {
+                            const w = Math.floor(Math.random() * 20) + 5;
+                            const h = Math.floor(Math.random() * 15) + 5;
+                            const isArea = Math.random() > 0.5;
+                            newProblem = {
+                                type: 'geometry',
+                                question: `HCN`,
+                                answer: String(isArea ? w * h : (w + h) * 2),
+                                display: (
+                                    <div className="text-2xl font-bold text-emerald-600 text-center">
+                                        Hình chữ nhật: Dài {w}cm, Rộng {h}cm.<br/>
+                                        {isArea ? 'Diện tích' : 'Chu vi'} = ?
+                                    </div>
+                                )
+                            };
+                        }
+                        break;
+                    }
+                    case 'measurement': {
+                        const units = [
+                            { from: 'km', to: 'm', factor: 1000 },
+                            { from: 'm', to: 'cm', factor: 100 },
+                            { from: 'kg', to: 'g', factor: 1000 },
+                            { from: 'tấn', to: 'kg', factor: 1000 },
+                            { from: 'giờ', to: 'phút', factor: 60 }
+                        ];
+                        const unit = units[Math.floor(Math.random() * units.length)];
+                        const val = Math.floor(Math.random() * 10) + 1;
+                        newProblem = {
+                            type: 'measurement',
+                            question: `Đổi đơn vị`,
+                            answer: String(val * unit.factor),
+                            display: (
+                                <div className="text-4xl font-bold text-rose-600">
+                                    {val} {unit.from} = <span className="text-gray-300">?</span> {unit.to}
+                                </div>
+                            )
+                        };
+                        break;
+                    }
+                    case 'fraction': {
+                        const subType = Math.random();
+                        if (subType < 0.5) {
+                            const den = Math.floor(Math.random() * 9) + 2;
+                            const num1 = Math.floor(Math.random() * 10) + 1;
+                            const num2 = Math.floor(Math.random() * 10) + 1;
+                            const op = Math.random() > 0.5 ? '+' : '-';
+                            let n1 = num1, n2 = num2;
+                            if (op === '-' && n1 < n2) [n1, n2] = [n2, n1];
+                            const resultNum = op === '+' ? n1 + n2 : n1 - n2;
+                            const simplified = simplify({ num: resultNum, den });
+                            const ans = simplified.den === 1 ? `${simplified.num}` : `${simplified.num}/${simplified.den}`;
+                            newProblem = {
+                                type: 'fraction',
+                                question: `Tính phân số`,
+                                answer: ans,
+                                display: (
+                                    <div className="flex items-center gap-4 text-4xl font-bold text-blue-600">
+                                        <div className="flex flex-col items-center"><span>{n1}</span><div className="fraction-line" /><span>{den}</span></div>
+                                        <span>{op}</span>
+                                        <div className="flex flex-col items-center"><span>{n2}</span><div className="fraction-line" /><span>{den}</span></div>
+                                        <span>=</span>
+                                        <span className="text-gray-300">?</span>
+                                    </div>
+                                )
+                            };
+                        } else {
+                            const n1 = Math.floor(Math.random() * 5) + 1;
+                            const d1 = Math.floor(Math.random() * 5) + 2;
+                            const n2 = Math.floor(Math.random() * 5) + 1;
+                            const d2 = Math.floor(Math.random() * 5) + 2;
+                            const val1 = n1 / d1;
+                            const val2 = n2 / d2;
+                            const ans = val1 > val2 ? '>' : val1 < val2 ? '<' : '=';
+                            newProblem = {
+                                type: 'fraction',
+                                question: `So sánh phân số`,
+                                answer: ans,
+                                display: (
+                                    <div className="flex items-center gap-6 text-4xl font-bold text-blue-600">
+                                        <div className="flex flex-col items-center"><span>{n1}</span><div className="fraction-line" /><span>{d1}</span></div>
+                                        <span className="text-gray-300 mx-2">?</span>
+                                        <div className="flex flex-col items-center"><span>{n2}</span><div className="fraction-line" /><span>{d2}</span></div>
+                                    </div>
+                                ),
+                                hint: 'Nhập >, < hoặc ='
+                            };
+                        }
+                        break;
+                    }
+                    default: {
+                        const a = Math.floor(Math.random() * 900) + 100;
+                        const b = Math.floor(Math.random() * 900) + 100;
+                        const op = Math.random() > 0.5 ? '+' : '-';
+                        let q, ans;
+                        if (op === '+') { q = `${a} + ${b}`; ans = a + b; }
+                        else { const max = Math.max(a, b); const min = Math.min(a, b); q = `${max} - ${min}`; ans = max - min; }
+                        newProblem = {
+                            type: 'basic',
+                            question: q,
+                            answer: String(ans),
+                            display: (
+                                <div className="text-6xl font-bold text-purple-600 tracking-wider">
+                                    {q} = <span className="text-gray-300">?</span>
+                                </div>
+                            )
+                        };
+                    }
+                }
+                setProblem(newProblem);
+                setTimeLeft(30);
+                setUserAnswer('');
+                setFeedback(null);
+            }, []);
+
+            const startGame = () => {
+                setScore(0);
+                setGameState('playing');
+                generateProblem();
+            };
+
+            const handleCheck = (e) => {
+                e?.preventDefault();
+                if (!problem || !userAnswer) return;
+
+                const normalizedUser = userAnswer.trim().toLowerCase();
+                const normalizedCorrect = problem.answer.toLowerCase();
+                const isCorrect = normalizedUser === normalizedCorrect;
+
+                if (isCorrect) {
+                    setScore(s => s + 10);
+                    setFeedback('correct');
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
+                    });
+                    setTimeout(generateProblem, 1500);
+                } else {
+                    setFeedback('wrong');
+                    setTimeout(() => setFeedback(null), 1000);
+                }
+            };
+
+            useEffect(() => {
+                let timer;
+                if (gameState === 'playing' && timeLeft > 0) {
+                    timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                } else if (timeLeft === 0 && gameState === 'playing') {
+                    setGameState('gameOver');
+                }
+                return () => clearInterval(timer);
+            }, [timeLeft, gameState]);
+
+            const getCategoryLabel = (type) => {
+                switch (type) {
+                    case 'natural': return { label: 'Số tự nhiên', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+                    case 'geometry': return { label: 'Hình học', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+                    case 'measurement': return { label: 'Đo lường', color: 'bg-rose-100 text-rose-700 border-rose-200' };
+                    case 'fraction': return { label: 'Phân số', color: 'bg-blue-100 text-blue-700 border-blue-200' };
+                    default: return { label: 'Phép tính', color: 'bg-purple-100 text-purple-700 border-purple-200' };
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl md:text-5xl font-black text-orange-500 flex items-center justify-center gap-3">
+                            <i data-lucide="calculator" className="w-10 h-10"></i>
+                            TOÁN LỚP 4 VUI NHỘN
+                        </h1>
+                        <p className="text-blue-500 font-bold mt-2 text-xl">Học mà chơi, chơi mà học!</p>
+                    </div>
+
+                    <div className="w-full max-w-2xl bg-white rounded-3xl custom-shadow p-8 border-8 border-yellow-400 relative overflow-hidden">
+                        {gameState === 'idle' && (
+                            <div className="text-center py-12">
+                                <div className="mb-6"><i data-lucide="star" className="w-24 h-24 text-yellow-400 mx-auto fill-current"></i></div>
+                                <h2 className="text-3xl font-bold text-gray-700 mb-8">Sẵn sàng chưa bé ơi?</h2>
+                                <button onClick={startGame} className="bg-green-500 hover:bg-green-600 text-white text-2xl font-black px-12 py-4 rounded-full shadow-lg transform transition hover:scale-110 active:scale-95">
+                                    BẮT ĐẦU NGAY!
+                                </button>
+                            </div>
+                        )}
+
+                        {gameState === 'playing' && problem && (
+                            <div className="space-y-8">
+                                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border-2 border-gray-100">
+                                    <div className="flex items-center gap-2">
+                                        <i data-lucide="trophy" className="text-yellow-500 w-8 h-8"></i>
+                                        <span className="text-2xl font-black text-gray-700">{score}</span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}>
+                                        <i data-lucide="timer" className="w-8 h-8"></i>
+                                        <span className="text-2xl font-black">{timeLeft}s</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border-4 border-dashed border-blue-200 min-h-[250px] relative">
+                                    <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold border ${getCategoryLabel(problem.type).color}`}>
+                                        {getCategoryLabel(problem.type).label}
+                                    </div>
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                        {problem.display}
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleCheck} className="flex flex-col items-center gap-4">
+                                    <div className="relative w-full max-w-xs">
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={userAnswer}
+                                            onChange={(e) => setUserAnswer(e.target.value)}
+                                            placeholder="Kết quả..."
+                                            className="w-full text-center text-4xl font-bold p-4 rounded-2xl border-4 border-blue-400 focus:border-orange-400 focus:outline-none transition-colors"
+                                        />
+                                        {feedback === 'correct' && <div className="absolute -right-12 top-1/2 -translate-y-1/2"><i data-lucide="check-circle-2" className="w-10 h-10 text-green-500"></i></div>}
+                                        {feedback === 'wrong' && <div className="absolute -right-12 top-1/2 -translate-y-1/2"><i data-lucide="x-circle" className="w-10 h-10 text-red-500"></i></div>}
+                                    </div>
+                                    
+                                    {problem.hint && <p className="text-gray-500 text-sm font-medium bg-gray-50 px-4 py-1 rounded-full border border-gray-100">💡 Gợi ý: {problem.hint}</p>}
+
+                                    <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white text-xl font-black px-10 py-3 rounded-full shadow-md transform transition hover:scale-105 active:scale-95">
+                                        KIỂM TRA
+                                    </button>
+                                    <p className="text-gray-400 text-sm italic text-center">
+                                        {problem.type === 'fraction' ? '* Nhập dạng a/b (ví dụ: 1/2) hoặc dấu >, <, =' : '* Nhập kết quả chính xác nhé!'}
+                                    </p>
+                                </form>
+                            </div>
+                        )}
+
+                        {gameState === 'gameOver' && (
+                            <div className="text-center py-8">
+                                <div className="mb-6">
+                                    <div className="inline-block p-6 bg-yellow-100 rounded-full mb-4"><i data-lucide="trophy" className="w-20 h-20 text-yellow-500"></i></div>
+                                    <h2 className="text-4xl font-black text-gray-800 mb-2">HẾT GIỜ RỒI!</h2>
+                                    <p className="text-2xl text-blue-600 font-bold">Điểm của bạn: {score}</p>
+                                </div>
+                                <div className="flex flex-col gap-4 items-center">
+                                    <button onClick={startGame} className="bg-green-500 hover:bg-green-600 text-white text-xl font-black px-10 py-4 rounded-full shadow-lg flex items-center gap-2 transform transition hover:scale-105">
+                                        <i data-lucide="refresh-cw" className="w-6 h-6"></i> CHƠI LẠI
+                                    </button>
+                                    <button onClick={() => setGameState('idle')} className="text-gray-500 font-bold hover:text-gray-700 underline">Về màn hình chính</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Tips */}
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
+                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                            <span className="block text-2xl mb-1">💡</span>
+                            <p className="text-sm text-blue-800 font-medium">Cộng trừ phân số cùng mẫu: chỉ cần cộng trừ tử số!</p>
+                        </div>
+                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                            <span className="block text-2xl mb-1">🚀</span>
+                            <p className="text-sm text-blue-800 font-medium">Làm thật nhanh để đạt điểm cao nhất nhé!</p>
+                        </div>
+                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                            <span className="block text-2xl mb-1">✨</span>
+                            <p className="text-sm text-blue-800 font-medium">Nhớ rút gọn phân số nếu có thể!</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        // Initialize Lucide icons after render
+        setTimeout(() => lucide.createIcons(), 100);
+        // Re-run lucide on state changes if needed
+        const observer = new MutationObserver(() => lucide.createIcons());
+        observer.observe(document.getElementById('root'), { childList: true, subtree: true });
+    </script>
+</body>
+</html>
