@@ -1,4 +1,3 @@
-Html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -16,8 +15,6 @@ Html
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- Framer Motion (via ESM) -->
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -26,25 +23,53 @@ Html
             font-family: 'Quicksand', sans-serif;
             background-color: #F0F9FF;
             margin: 0;
-            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .fraction-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
 
         .fraction-line {
             height: 3px;
             width: 100%;
+            min-width: 30px;
             background-color: #2563eb;
             margin: 4px 0;
             border-radius: 2px;
         }
 
-        .custom-shadow {
+        .card-container {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
         }
 
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        .correct-pop {
+            animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
     </style>
 </head>
@@ -83,7 +108,6 @@ Html
                             const b = Math.floor(Math.random() * 90000) + 10000;
                             newProblem = {
                                 type: 'natural',
-                                question: `So sánh ${a} và ${b}`,
                                 answer: a > b ? '>' : a < b ? '<' : '=',
                                 display: (
                                     <div className="text-4xl font-bold text-indigo-600 flex items-center">
@@ -93,14 +117,14 @@ Html
                                 hint: 'Nhập >, < hoặc ='
                             };
                         } else if (subType < 0.66) {
-                            const a = Math.floor(Math.random() * 100);
-                            const b = Math.floor(Math.random() * 100);
-                            const sum = a + b + (Math.floor(Math.random() * 100));
-                            const finalC = sum + (3 - (sum % 3));
+                            const a = Math.floor(Math.random() * 50) + 10;
+                            const b = Math.floor(Math.random() * 50) + 10;
+                            const c = Math.floor(Math.random() * 50) + 10;
+                            const sum = a + b + c;
+                            const finalC = c + (sum % 3 === 0 ? 0 : 3 - (sum % 3));
                             const finalAvg = (a + b + finalC) / 3;
                             newProblem = {
                                 type: 'natural',
-                                question: `Trung bình cộng`,
                                 answer: String(finalAvg),
                                 display: (
                                     <div className="text-3xl font-bold text-indigo-600 text-center">
@@ -109,11 +133,10 @@ Html
                                 )
                             };
                         } else {
-                            const num = Math.floor(Math.random() * 9000) + 1000;
+                            const num = Math.floor(Math.random() * 8999) + 1000;
                             const rounded = Math.round(num / 100) * 100;
                             newProblem = {
                                 type: 'natural',
-                                question: `Làm tròn`,
                                 answer: String(rounded),
                                 display: (
                                     <div className="text-3xl font-bold text-indigo-600 text-center">
@@ -136,7 +159,6 @@ Html
                             const selected = angles[Math.floor(Math.random() * angles.length)];
                             newProblem = {
                                 type: 'geometry',
-                                question: `Góc`,
                                 answer: selected.val,
                                 display: (
                                     <div className="text-3xl font-bold text-emerald-600 text-center">
@@ -147,17 +169,16 @@ Html
                                 hint: '90: vuông, nhon: nhọn, tu: tù, bet: bẹt'
                             };
                         } else {
-                            const w = Math.floor(Math.random() * 20) + 5;
-                            const h = Math.floor(Math.random() * 15) + 5;
+                            const w = Math.floor(Math.random() * 15) + 5;
+                            const h = Math.floor(Math.random() * 10) + 5;
                             const isArea = Math.random() > 0.5;
                             newProblem = {
                                 type: 'geometry',
-                                question: `HCN`,
                                 answer: String(isArea ? w * h : (w + h) * 2),
                                 display: (
                                     <div className="text-2xl font-bold text-emerald-600 text-center">
                                         Hình chữ nhật: Dài {w}cm, Rộng {h}cm.<br/>
-                                        {isArea ? 'Diện tích' : 'Chu vi'} = ?
+                                        {isArea ? 'Diện tích (cm²)' : 'Chu vi (cm)'} = ?
                                     </div>
                                 )
                             };
@@ -169,14 +190,12 @@ Html
                             { from: 'km', to: 'm', factor: 1000 },
                             { from: 'm', to: 'cm', factor: 100 },
                             { from: 'kg', to: 'g', factor: 1000 },
-                            { from: 'tấn', to: 'kg', factor: 1000 },
                             { from: 'giờ', to: 'phút', factor: 60 }
                         ];
                         const unit = units[Math.floor(Math.random() * units.length)];
-                        const val = Math.floor(Math.random() * 10) + 1;
+                        const val = Math.floor(Math.random() * 12) + 1;
                         newProblem = {
                             type: 'measurement',
-                            question: `Đổi đơn vị`,
                             answer: String(val * unit.factor),
                             display: (
                                 <div className="text-4xl font-bold text-rose-600">
@@ -189,7 +208,7 @@ Html
                     case 'fraction': {
                         const subType = Math.random();
                         if (subType < 0.5) {
-                            const den = Math.floor(Math.random() * 9) + 2;
+                            const den = Math.floor(Math.random() * 8) + 2;
                             const num1 = Math.floor(Math.random() * 10) + 1;
                             const num2 = Math.floor(Math.random() * 10) + 1;
                             const op = Math.random() > 0.5 ? '+' : '-';
@@ -200,15 +219,13 @@ Html
                             const ans = simplified.den === 1 ? `${simplified.num}` : `${simplified.num}/${simplified.den}`;
                             newProblem = {
                                 type: 'fraction',
-                                question: `Tính phân số`,
                                 answer: ans,
                                 display: (
                                     <div className="flex items-center gap-4 text-4xl font-bold text-blue-600">
-                                        <div className="flex flex-col items-center"><span>{n1}</span><div className="fraction-line" /><span>{den}</span></div>
+                                        <div className="fraction-container"><span>{n1}</span><div className="fraction-line" /><span>{den}</span></div>
                                         <span>{op}</span>
-                                        <div className="flex flex-col items-center"><span>{n2}</span><div className="fraction-line" /><span>{den}</span></div>
-                                        <span>=</span>
-                                        <span className="text-gray-300">?</span>
+                                        <div className="fraction-container"><span>{n2}</span><div className="fraction-line" /><span>{den}</span></div>
+                                        <span>= ?</span>
                                     </div>
                                 )
                             };
@@ -222,13 +239,12 @@ Html
                             const ans = val1 > val2 ? '>' : val1 < val2 ? '<' : '=';
                             newProblem = {
                                 type: 'fraction',
-                                question: `So sánh phân số`,
                                 answer: ans,
                                 display: (
                                     <div className="flex items-center gap-6 text-4xl font-bold text-blue-600">
-                                        <div className="flex flex-col items-center"><span>{n1}</span><div className="fraction-line" /><span>{d1}</span></div>
+                                        <div className="fraction-container"><span>{n1}</span><div className="fraction-line" /><span>{d1}</span></div>
                                         <span className="text-gray-300 mx-2">?</span>
-                                        <div className="flex flex-col items-center"><span>{n2}</span><div className="fraction-line" /><span>{d2}</span></div>
+                                        <div className="fraction-container"><span>{n2}</span><div className="fraction-line" /><span>{d2}</span></div>
                                     </div>
                                 ),
                                 hint: 'Nhập >, < hoặc ='
@@ -237,19 +253,18 @@ Html
                         break;
                     }
                     default: {
-                        const a = Math.floor(Math.random() * 900) + 100;
-                        const b = Math.floor(Math.random() * 900) + 100;
+                        const a = Math.floor(Math.random() * 800) + 100;
+                        const b = Math.floor(Math.random() * 800) + 100;
                         const op = Math.random() > 0.5 ? '+' : '-';
                         let q, ans;
                         if (op === '+') { q = `${a} + ${b}`; ans = a + b; }
                         else { const max = Math.max(a, b); const min = Math.min(a, b); q = `${max} - ${min}`; ans = max - min; }
                         newProblem = {
                             type: 'basic',
-                            question: q,
                             answer: String(ans),
                             display: (
                                 <div className="text-6xl font-bold text-purple-600 tracking-wider">
-                                    {q} = <span className="text-gray-300">?</span>
+                                    {q} = ?
                                 </div>
                             )
                         };
@@ -281,13 +296,12 @@ Html
                     confetti({
                         particleCount: 150,
                         spread: 70,
-                        origin: { y: 0.6 },
-                        colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
+                        origin: { y: 0.6 }
                     });
-                    setTimeout(generateProblem, 1500);
+                    setTimeout(generateProblem, 1200);
                 } else {
                     setFeedback('wrong');
-                    setTimeout(() => setFeedback(null), 1000);
+                    setTimeout(() => setFeedback(null), 800);
                 }
             };
 
@@ -301,6 +315,13 @@ Html
                 return () => clearInterval(timer);
             }, [timeLeft, gameState]);
 
+            // Initialize Lucide icons
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [gameState, problem, feedback]);
+
             const getCategoryLabel = (type) => {
                 switch (type) {
                     case 'natural': return { label: 'Số tự nhiên', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
@@ -312,23 +333,23 @@ Html
             };
 
             return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-4xl px-4">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-4xl md:text-5xl font-black text-orange-500 flex items-center justify-center gap-3">
                             <i data-lucide="calculator" className="w-10 h-10"></i>
                             TOÁN LỚP 4 VUI NHỘN
                         </h1>
-                        <p className="text-blue-500 font-bold mt-2 text-xl">Học mà chơi, chơi mà học!</p>
+                        <p className="text-blue-500 font-bold mt-2 text-xl italic">Càng chơi càng giỏi, bé ơi!</p>
                     </div>
 
-                    <div className="w-full max-w-2xl bg-white rounded-3xl custom-shadow p-8 border-8 border-yellow-400 relative overflow-hidden">
+                    <div className={`w-full max-w-2xl mx-auto bg-white rounded-3xl card-container p-8 border-8 border-yellow-400 relative overflow-hidden ${feedback === 'wrong' ? 'shake' : ''}`}>
                         {gameState === 'idle' && (
                             <div className="text-center py-12">
-                                <div className="mb-6"><i data-lucide="star" className="w-24 h-24 text-yellow-400 mx-auto fill-current"></i></div>
-                                <h2 className="text-3xl font-bold text-gray-700 mb-8">Sẵn sàng chưa bé ơi?</h2>
+                                <div className="mb-6"><i data-lucide="star" className="w-24 h-24 text-yellow-400 mx-auto fill-current animate-bounce"></i></div>
+                                <h2 className="text-3xl font-bold text-gray-700 mb-8">Bé đã sẵn sàng chưa?</h2>
                                 <button onClick={startGame} className="bg-green-500 hover:bg-green-600 text-white text-2xl font-black px-12 py-4 rounded-full shadow-lg transform transition hover:scale-110 active:scale-95">
-                                    BẮT ĐẦU NGAY!
+                                    CHƠI NGAY THÔI!
                                 </button>
                             </div>
                         )}
@@ -350,7 +371,7 @@ Html
                                     <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold border ${getCategoryLabel(problem.type).color}`}>
                                         {getCategoryLabel(problem.type).label}
                                     </div>
-                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                    <div className={feedback === 'correct' ? 'correct-pop' : ''}>
                                         {problem.display}
                                     </div>
                                 </div>
@@ -374,9 +395,6 @@ Html
                                     <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white text-xl font-black px-10 py-3 rounded-full shadow-md transform transition hover:scale-105 active:scale-95">
                                         KIỂM TRA
                                     </button>
-                                    <p className="text-gray-400 text-sm italic text-center">
-                                        {problem.type === 'fraction' ? '* Nhập dạng a/b (ví dụ: 1/2) hoặc dấu >, <, =' : '* Nhập kết quả chính xác nhé!'}
-                                    </p>
                                 </form>
                             </div>
                         )}
@@ -384,9 +402,9 @@ Html
                         {gameState === 'gameOver' && (
                             <div className="text-center py-8">
                                 <div className="mb-6">
-                                    <div className="inline-block p-6 bg-yellow-100 rounded-full mb-4"><i data-lucide="trophy" className="w-20 h-20 text-yellow-500"></i></div>
+                                    <div className="inline-block p-6 bg-yellow-100 rounded-full mb-4"><i data-lucide="award" className="w-20 h-20 text-yellow-500"></i></div>
                                     <h2 className="text-4xl font-black text-gray-800 mb-2">HẾT GIỜ RỒI!</h2>
-                                    <p className="text-2xl text-blue-600 font-bold">Điểm của bạn: {score}</p>
+                                    <p className="text-2xl text-blue-600 font-bold">Bé đạt được: {score} điểm</p>
                                 </div>
                                 <div className="flex flex-col gap-4 items-center">
                                     <button onClick={startGame} className="bg-green-500 hover:bg-green-600 text-white text-xl font-black px-10 py-4 rounded-full shadow-lg flex items-center gap-2 transform transition hover:scale-105">
@@ -399,18 +417,18 @@ Html
                     </div>
 
                     {/* Footer Tips */}
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
-                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl mx-auto">
+                        <div className="bg-white/70 p-4 rounded-2xl border border-blue-100 text-center">
                             <span className="block text-2xl mb-1">💡</span>
-                            <p className="text-sm text-blue-800 font-medium">Cộng trừ phân số cùng mẫu: chỉ cần cộng trừ tử số!</p>
+                            <p className="text-sm text-blue-800 font-medium">So sánh phân số: Nhập dấu &gt;, &lt; hoặc = nhé!</p>
                         </div>
-                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                        <div className="bg-white/70 p-4 rounded-2xl border border-blue-100 text-center">
                             <span className="block text-2xl mb-1">🚀</span>
-                            <p className="text-sm text-blue-800 font-medium">Làm thật nhanh để đạt điểm cao nhất nhé!</p>
+                            <p className="text-sm text-blue-800 font-medium">Làm thật nhanh để đạt điểm cao nhất!</p>
                         </div>
-                        <div className="bg-white/50 p-4 rounded-2xl border border-blue-100 text-center">
+                        <div className="bg-white/70 p-4 rounded-2xl border border-blue-100 text-center">
                             <span className="block text-2xl mb-1">✨</span>
-                            <p className="text-sm text-blue-800 font-medium">Nhớ rút gọn phân số nếu có thể!</p>
+                            <p className="text-sm text-blue-800 font-medium">Góc nhọn nhỏ hơn góc vuông (90 độ).</p>
                         </div>
                     </div>
                 </div>
@@ -419,12 +437,6 @@ Html
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-
-        // Initialize Lucide icons after render
-        setTimeout(() => lucide.createIcons(), 100);
-        // Re-run lucide on state changes if needed
-        const observer = new MutationObserver(() => lucide.createIcons());
-        observer.observe(document.getElementById('root'), { childList: true, subtree: true });
     </script>
 </body>
 </html>
